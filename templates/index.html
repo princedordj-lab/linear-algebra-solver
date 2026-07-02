@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linear Algebra Solver</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body { font-feature-settings: 'tnum'; }
+    html { transition: background-color 0.3s ease; }
+    input[type="text"], input[type="number"], select { -moz-appearance: textfield; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .matrix-bracket { position: relative; }
+    .matrix-bracket::before,
+    .matrix-bracket::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: #94a3b8;
+      border-radius: 2px;
+    }
+    .dark .matrix-bracket::before,
+    .dark .matrix-bracket::after {
+      background: #475569;
+    }
+    .matrix-bracket::before { left: -8px; }
+    .matrix-bracket::after { right: -8px; }
+    .step-fade-enter { animation: fadeIn 0.2s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .theme-toggle {
+      background: none;
+      border: 1px solid #d1d5db;
+      border-radius: 9999px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .dark .theme-toggle {
+      border-color: #4b5563;
+    }
+    .theme-toggle:hover {
+      background: #f3f4f6;
+    }
+    .dark .theme-toggle:hover {
+      background: #374151;
+    }
+  </style>
+</head>
+<body class="bg-white text-gray-800 dark:bg-gray-950 dark:text-gray-200 antialiased font-sans min-h-screen transition-colors duration-300">
+
+  <div class="max-w-7xl mx-auto px-6 py-8 lg:px-8 lg:py-10">
+
+    <!-- Header -->
+    <header class="mb-9 border-b border-gray-200 dark:border-gray-800 pb-5 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">Linear Algebra Solver</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Solve Ax = b using eight numerical methods</p>
+      </div>
+      <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
+        <span id="themeIcon">&#9790;</span>
+      </button>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+
+      <!-- ====== INPUT PANEL — left 2/5 ====== -->
+      <div class="lg:col-span-2">
+
+        <!-- Method Selector -->
+        <div class="mb-5">
+          <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Method</label>
+          <select id="method" onchange="updateForm()" class="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 shadow-sm focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors cursor-pointer hover:border-gray-400 dark:hover:border-gray-500">
+            <optgroup label="Direct Methods">
+              <option value="gaussian_partial">Gaussian — Partial Pivoting</option>
+              <option value="gaussian_complete">Gaussian — Complete Pivoting</option>
+              <option value="gauss_jordan">Gauss-Jordan Elimination</option>
+              <option value="matrix_inverse">Matrix Inverse (Gauss-Jordan)</option>
+            </optgroup>
+            <optgroup label="Iterative Methods">
+              <option value="jacobi">Jacobi Iterative</option>
+              <option value="gauss_seidel">Gauss-Seidel Iterative</option>
+            </optgroup>
+            <optgroup label="LU Decomposition">
+              <option value="lu_doolittle">LU Decomposition (Doolittle)</option>
+              <option value="lu_crout">LU Decomposition (Crout)</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <!-- Matrix Size -->
+        <div class="mb-5">
+          <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Size (n)</label>
+          <input id="n" type="number" min="1" max="10" value="3" onchange="buildGrids()" class="w-20 border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 shadow-sm focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors">
+        </div>
+
+        <!-- Matrix A -->
+        <div class="mb-5">
+          <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Matrix A</label>
+          <div class="matrix-bracket inline-block pl-3 pr-3 py-2 bg-gray-50 dark:bg-gray-900 rounded">
+            <div id="matrix-a" class="grid gap-1" style="grid-template-columns: repeat(3, minmax(0, 1fr));"></div>
+          </div>
+        </div>
+
+        <!-- Vector B -->
+        <div id="b-section" class="mb-5">
+          <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Vector b</label>
+          <div class="inline-flex items-center gap-2 bg-gray-50 dark:bg-gray-900 rounded px-4 py-2.5">
+            <span class="text-sm text-gray-400 dark:text-gray-500 mr-0.5">[</span>
+            <div id="vector-b" class="flex gap-1.5 flex-wrap"></div>
+            <span class="text-sm text-gray-400 dark:text-gray-500 ml-0.5">]</span>
+          </div>
+        </div>
+
+        <!-- Tolerance & Max Iterations -->
+        <div id="iter-params" class="mb-5 hidden">
+          <div class="flex gap-5">
+            <div>
+              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Tolerance</label>
+              <input id="tol" type="text" value="0.000001" class="w-28 border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 shadow-sm focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Max Iter</label>
+              <input id="max_iter" type="number" value="100" min="1" max="10000" class="w-24 border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 shadow-sm focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors">
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-2">
+          <button onclick="submitSolve()" class="flex-1 bg-gray-900 dark:bg-gray-100 hover:bg-gray-800 dark:hover:bg-gray-200 text-white dark:text-gray-900 text-sm font-medium py-2.5 px-4 rounded-md transition-colors shadow-sm">
+            Solve
+          </button>
+          <button onclick="resetAll()" class="px-3 py-2.5 border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm rounded-md transition-colors" title="Reset all">
+            &#x21bb;
+          </button>
+        </div>
+
+        <!-- Error -->
+        <div id="error" class="mt-3 text-sm text-gray-500 dark:text-gray-400 hidden"></div>
+      </div>
+
+      <!-- ====== RESULTS PANEL — right 3/5 ====== -->
+      <div id="results" class="lg:col-span-3 hidden">
+        <div class="border border-gray-200 dark:border-gray-800 rounded-lg bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
+
+          <!-- header -->
+          <div class="px-5 py-3.5 flex items-center justify-between">
+            <h2 class="text-base font-medium text-gray-900 dark:text-gray-100">Results</h2>
+            <span id="iter-summary" class="text-xs text-gray-400 dark:text-gray-500 hidden"></span>
+          </div>
+
+          <!-- Step Navigation -->
+          <div id="step-nav" class="px-5 py-2.5 bg-gray-50 dark:bg-gray-900 flex items-center justify-between hidden border-b border-gray-100 dark:border-gray-800">
+            <button onclick="navigateStep(-1)" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors px-2 py-0.5 rounded hover:bg-gray-200/60 dark:hover:bg-gray-800">&larr; Prev</button>
+            <span id="step-counter" class="text-xs text-gray-400 dark:text-gray-500 font-medium tabular-nums">Step 1 / 1</span>
+            <button onclick="navigateStep(1)" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors px-2 py-0.5 rounded hover:bg-gray-200/60 dark:hover:bg-gray-800">Next &rarr;</button>
+          </div>
+
+          <!-- Step Display -->
+          <div id="step-display" class="px-5 py-4 step-fade-enter">
+            <h3 id="step-label" class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3"></h3>
+            <div id="step-matrix" class="overflow-x-auto flex justify-center mb-2"></div>
+            <div id="step-vector" class="mt-2 text-center text-sm"></div>
+            <div id="step-extra" class="mt-3 text-xs text-gray-400 dark:text-gray-500 leading-relaxed text-center"></div>
+          </div>
+
+          <!-- Final Solution -->
+          <div id="final-solution" class="px-5 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 hidden">
+            <h3 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Solution</h3>
+            <div id="solution-vector" class="text-sm font-mono text-gray-800 dark:text-gray-200"></div>
+          </div>
+
+          <!-- Verification -->
+          <div id="verification" class="px-5 py-4 border-t border-gray-100 dark:border-gray-800 hidden">
+            <h3 class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Verification (A&middot;x &asymp; b)</h3>
+            <div id="verification-content" class="text-xs font-mono text-gray-500 dark:text-gray-400 space-y-0.5"></div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ---- Theme ----
+    function toggleTheme() {
+      const html = document.documentElement;
+      const icon = document.getElementById('themeIcon');
+      const isDark = html.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      icon.textContent = isDark ? '\u263E' : '\u263D';
+    }
+
+    // Restore saved theme
+    (function initTheme() {
+      const saved = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const useDark = saved === 'dark' || (!saved && prefersDark);
+      if (useDark) {
+        document.documentElement.classList.add('dark');
+        document.getElementById('themeIcon').textContent = '\u263E';
+      }
+    })();
+
+    // ---- State ----
+    let currentStep = 0;
+    let steps = [];
+    let resultData = null;
+
+    // ---- Build Input Grids ----
+    function buildGrids() {
+      const n = parseInt(document.getElementById('n').value) || 3;
+      const aContainer = document.getElementById('matrix-a');
+      const bContainer = document.getElementById('vector-b');
+
+      const isDark = document.documentElement.classList.contains('dark');
+      const inputClass = 'w-14 h-8 border border-gray-300 dark:border-gray-700 rounded px-1.5 text-xs text-center font-mono focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors ' + (isDark ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-800');
+
+      aContainer.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
+      aContainer.innerHTML = '';
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          const inp = document.createElement('input');
+          inp.type = 'text';
+          inp.value = i === j ? '1' : '0';
+          inp.dataset.row = i;
+          inp.dataset.col = j;
+          inp.className = inputClass;
+          aContainer.appendChild(inp);
+        }
+      }
+
+      bContainer.innerHTML = '';
+      for (let i = 0; i < n; i++) {
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.value = '1';
+        inp.dataset.idx = i;
+        inp.className = inputClass;
+        bContainer.appendChild(inp);
+      }
+    }
+
+    // ---- Reset ----
+    function resetAll() {
+      document.getElementById('n').value = 3;
+      document.getElementById('method').value = 'gaussian_partial';
+      buildGrids();
+      updateForm();
+      document.getElementById('results').classList.add('hidden');
+      document.getElementById('error').classList.add('hidden');
+      steps = [];
+      resultData = null;
+      currentStep = 0;
+    }
+
+    // ---- Update Form ----
+    function updateForm() {
+      const method = document.getElementById('method').value;
+      const bSection = document.getElementById('b-section');
+      const iterParams = document.getElementById('iter-params');
+
+      if (method === 'matrix_inverse') {
+        bSection.classList.add('hidden');
+      } else {
+        bSection.classList.remove('hidden');
+      }
+
+      if (method === 'jacobi' || method === 'gauss_seidel') {
+        iterParams.classList.remove('hidden');
+      } else {
+        iterParams.classList.add('hidden');
+      }
+    }
+
+    // ---- Read Inputs ----
+    function readInputs() {
+      const n = parseInt(document.getElementById('n').value) || 3;
+      const A = [];
+      const aInputs = document.querySelectorAll('#matrix-a input');
+      for (let i = 0; i < n; i++) {
+        const row = [];
+        for (let j = 0; j < n; j++) {
+          row.push(parseFloat(aInputs[i * n + j].value) || 0);
+        }
+        A.push(row);
+      }
+
+      const b = [];
+      const bInputs = document.querySelectorAll('#vector-b input');
+      bInputs.forEach(inp => b.push(parseFloat(inp.value) || 0));
+
+      return { n, A, b };
+    }
+
+    // ---- Submit Solve ----
+    async function submitSolve() {
+      const method = document.getElementById('method').value;
+      const { n, A, b } = readInputs();
+      const tol = parseFloat(document.getElementById('tol').value) || 1e-6;
+      const max_iter = parseInt(document.getElementById('max_iter').value) || 100;
+
+      const body = { method, n, A };
+      if (method !== 'matrix_inverse') body.b = b;
+      if (method === 'jacobi' || method === 'gauss_seidel') {
+        body.tol = tol;
+        body.max_iter = max_iter;
+      }
+
+      const errorDiv = document.getElementById('error');
+      errorDiv.classList.add('hidden');
+
+      try {
+        const res = await fetch('/solve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          errorDiv.textContent = 'Error: ' + data.error;
+          errorDiv.classList.remove('hidden');
+          return;
+        }
+
+        resultData = data;
+        steps = data.steps || [];
+        currentStep = 0;
+        renderResults();
+      } catch (err) {
+        errorDiv.textContent = 'Network error: ' + err.message;
+        errorDiv.classList.remove('hidden');
+      }
+    }
+
+    // ---- Render Results ----
+    function renderResults() {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.classList.remove('hidden');
+
+      const stepNav = document.getElementById('step-nav');
+      if (steps.length > 1) {
+        stepNav.classList.remove('hidden');
+      } else {
+        stepNav.classList.add('hidden');
+      }
+
+      renderStep(currentStep);
+      renderFinalSolution();
+      renderVerification();
+      renderIterSummary();
+    }
+
+    // ---- Render Step ----
+    function renderStep(idx) {
+      if (!steps.length) return;
+      const step = steps[idx];
+
+      const display = document.getElementById('step-display');
+      display.classList.remove('step-fade-enter');
+      void display.offsetWidth;
+      display.classList.add('step-fade-enter');
+
+      document.getElementById('step-counter').textContent = `Step ${idx + 1} / ${steps.length}`;
+      document.getElementById('step-label').textContent = step.label;
+
+      const isDark = document.documentElement.classList.contains('dark');
+      const tdBase = 'px-2.5 py-1 text-xs text-right border transition-colors ';
+
+      const matrixDiv = document.getElementById('step-matrix');
+      matrixDiv.innerHTML = '';
+      if (step.matrix) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'matrix-bracket inline-block pl-3 pr-3 py-2';
+
+        const table = document.createElement('table');
+        table.className = 'border-collapse font-mono';
+        const nRows = step.matrix.length;
+        const nCols = step.matrix[0].length;
+        for (let i = 0; i < nRows; i++) {
+          const tr = document.createElement('tr');
+          for (let j = 0; j < nCols; j++) {
+            const td = document.createElement('td');
+            const val = step.matrix[i][j];
+            td.textContent = typeof val === 'number' ? val.toFixed(4) : val;
+            td.className = tdBase + (isDark
+              ? 'text-gray-300 border-gray-700'
+              : 'text-gray-700 border-gray-200');
+            if (j === nCols - 2) td.className += (isDark ? ' border-r-2 border-r-gray-600' : ' border-r-2 border-r-gray-300');
+            tr.appendChild(td);
+          }
+          wrapper.appendChild(table);
+          table.appendChild(tr);
+        }
+        matrixDiv.appendChild(wrapper);
+      }
+
+      const vectorDiv = document.getElementById('step-vector');
+      vectorDiv.innerHTML = '';
+      if (step.vector) {
+        const html = '<span class="text-gray-400 dark:text-gray-500 font-mono">x = [</span>' +
+          step.vector.map(v => `<span class="${isDark ? 'text-gray-200' : 'text-gray-700'} font-mono font-medium">${typeof v === 'number' ? v.toFixed(4) : v}</span>`).join(', ') +
+          '<span class="text-gray-400 dark:text-gray-500 font-mono">]</span>';
+        vectorDiv.innerHTML = html;
+      }
+
+      const extraDiv = document.getElementById('step-extra');
+      extraDiv.innerHTML = '';
+      if (step.extra) {
+        const lines = [];
+        if (step.extra.colOrder) {
+          lines.push(`Column order: [${step.extra.colOrder.join(', ')}]`);
+        }
+        if (step.extra.L) {
+          lines.push('L: ' + JSON.stringify(step.extra.L.map(r => r.map(v => typeof v === 'number' ? v.toFixed(3) : v))));
+        }
+        if (step.extra.U) {
+          lines.push('U: ' + JSON.stringify(step.extra.U.map(r => r.map(v => typeof v === 'number' ? v.toFixed(3) : v))));
+        }
+        if (step.extra.components) {
+          step.extra.components.forEach(c => {
+            if (c.sum_others !== undefined) {
+              lines.push(`Row ${c.row}: &Sigma;others = ${c.sum_others.toFixed(4)}, x${c.row} = ${c.value.toFixed(4)}`);
+            } else if (c.lower_sum !== undefined) {
+              lines.push(`Row ${c.row}: L_sum = ${c.lower_sum.toFixed(4)}, U_sum = ${c.upper_sum.toFixed(4)}, x${c.row} = ${c.value.toFixed(4)}`);
+            }
+          });
+        }
+        if (step.residual !== undefined) {
+          lines.push(`Residual ||Ax - b|| = ${step.residual.toExponential(4)}`);
+        }
+        if (step.delta !== undefined && step.delta !== null) {
+          lines.push(`Delta ||x_new - x_old|| = ${step.delta.toExponential(4)}`);
+        }
+        if (lines.length) {
+          extraDiv.innerHTML = lines.join('<br>');
+        }
+      }
+    }
+
+    // ---- Step Navigation ----
+    function navigateStep(dir) {
+      currentStep = Math.max(0, Math.min(steps.length - 1, currentStep + dir));
+      renderStep(currentStep);
+    }
+
+    // ---- Final Solution ----
+    function renderFinalSolution() {
+      const div = document.getElementById('final-solution');
+      const vecDiv = document.getElementById('solution-vector');
+      if (!resultData || resultData.solution === undefined) {
+        div.classList.add('hidden');
+        return;
+      }
+      div.classList.remove('hidden');
+      const sol = resultData.solution;
+      if (Array.isArray(sol) && sol.length > 0 && Array.isArray(sol[0])) {
+        let html = '<span class="text-gray-400 dark:text-gray-500 font-mono">[</span>';
+        for (let i = 0; i < sol.length; i++) {
+          html += '<span class="text-gray-700 dark:text-gray-200 font-mono">' + sol[i].map(v => typeof v === 'number' ? v.toFixed(4) : v).join('  ') + '</span>';
+          if (i < sol.length - 1) html += '<br>';
+        }
+        html += '<span class="text-gray-400 dark:text-gray-500 font-mono">]</span>';
+        vecDiv.innerHTML = html;
+      } else if (Array.isArray(sol)) {
+        vecDiv.innerHTML = '<span class="text-gray-400 dark:text-gray-500 font-mono">[</span> ' +
+          sol.map(v => `<span class="text-gray-700 dark:text-gray-200 font-mono">${typeof v === 'number' ? v.toFixed(4) : v}</span>`).join(', ') +
+          ' <span class="text-gray-400 dark:text-gray-500 font-mono">]</span>';
+      } else {
+        vecDiv.textContent = String(sol);
+      }
+    }
+
+    // ---- Verification ----
+    function renderVerification() {
+      const div = document.getElementById('verification');
+      const content = document.getElementById('verification-content');
+      if (!resultData || !resultData.verification) {
+        div.classList.add('hidden');
+        return;
+      }
+      div.classList.remove('hidden');
+      const v = resultData.verification;
+      const expectedStr = Array.isArray(v.expected)
+        ? '[' + v.expected.map(x => typeof x === 'number' ? x.toFixed(4) : x).join(', ') + ']'
+        : JSON.stringify(v.expected);
+      const actualStr = Array.isArray(v.actual)
+        ? '[' + v.actual.map(x => typeof x === 'number' ? x.toFixed(4) : x).join(', ') + ']'
+        : JSON.stringify(v.actual);
+      const matchIcon = v.match ? '\u2713' : '\u2717';
+      content.innerHTML = `
+        <div>Expected: <span class="text-gray-600 dark:text-gray-300">${expectedStr}</span></div>
+        <div>Actual:   <span class="text-gray-600 dark:text-gray-300">${actualStr}</span></div>
+        <div class="mt-1 font-medium ${v.match ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}">${matchIcon} ${v.match ? 'Match' : 'Mismatch'}</div>
+      `;
+    }
+
+    // ---- Iteration Summary ----
+    function renderIterSummary() {
+      const div = document.getElementById('iter-summary');
+      if (!resultData || resultData.iterations === undefined) {
+        div.classList.add('hidden');
+        return;
+      }
+      div.classList.remove('hidden');
+      const conv = resultData.converged ? 'converged' : 'did not converge';
+      div.textContent = `${resultData.iterations} iterations — ${conv}`;
+    }
+
+    // ---- Init ----
+    buildGrids();
+    updateForm();
+  </script>
+
+</body>
+</html>
