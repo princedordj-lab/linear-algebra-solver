@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
-    body { font-feature-settings: 'tnum'; overflow: hidden; height: 100vh; background: #f8fafc; }
+    body { font-feature-settings: 'tnum'; overflow: clip; min-height: 100vh; background: #f8fafc; }
     .dark body, .dark { background: #0c0a1d; }
     .bg-glow { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
     .bg-glow::before { content: ''; position: absolute; top: -50%; left: -25%; width: 80%; height: 80%; background: radial-gradient(ellipse at center, rgba(99,102,241,0.08) 0%, transparent 70%); animation: drift 20s ease-in-out infinite alternate; }
@@ -45,6 +45,10 @@
   <div class="bg-glow"></div>
   <header class="relative z-40 h-14 flex items-center justify-between px-5 border-b border-indigo-200/40 dark:border-indigo-900/40 bg-white/70 dark:bg-[#0c0a1d]/80 backdrop-blur-xl">
     <div class="flex items-center gap-3">
+      <a href="/" class="flex items-center gap-0.5 text-xs text-indigo-400 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors flex-shrink-0">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+      </a>
       <a href="/" class="flex items-center gap-2.5 logo-pulse">
         <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="6" width="24" height="16" rx="3" stroke="url(#logoGrad)" stroke-width="2" fill="none"/><text x="14" y="19" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11" font-weight="600" fill="url(#logoGrad)">Ax</text><defs><linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#a78bfa"/></linearGradient></defs></svg>
         <span class="text-base font-semibold tracking-tight bg-gradient-to-r from-indigo-600 to-violet-500 dark:from-indigo-400 dark:to-violet-300 text-transparent bg-clip-text">LinSolve</span>

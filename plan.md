@@ -1,9 +1,8 @@
-# Linear Algebra Solver Web App — Implementation Plan
+# LinSolve — Linear Algebra Solver Web App
 
 ## Overview
 
-A Flask web app that solves linear systems using 8 numerical methods, with step-by-step solution display.
-Styled with Tailwind CSS via CDN.
+A Flask web app that solves linear systems **Ax = b** using 8 numerical methods, with step-by-step solution display, user authentication, and a full suite of matrix analysis tools. Styled with Tailwind CSS via CDN.
 
 ---
 
@@ -11,14 +10,50 @@ Styled with Tailwind CSS via CDN.
 
 ```
 py/
-├── solver.py          (~400 lines)  — 8 solver functions
-├── app.py             (~80 lines)   — Flask server, POST /solve
+├── app.py             (~280 lines) — Flask server, all routes
+├── solver.py          (~400 lines) — 8 solver functions
+├── models.py          (~142 lines) — SQLite auth models & DB helpers
+├── requirements.txt    — Python dependencies
+├── vercel.json         — Vercel deployment config
+├── plan.md             — This file
+├── linsolve.db         — SQLite database (auto-created)
+├── api/
+│   └── index.py        — Vercel serverless entry point
+├── public/
+│   └── logo.svg        — App favicon
 ├── templates/
-│   └── index.html     (~250 lines)  — Tailwind-styled UI
-└── static/           (empty — Tailwind via CDN, no local CSS)
-└── plan.md            — this file
-
+│   ├── index.html        (~474 lines) — Landing page + auth dashboard
+│   ├── auth.html         (~110 lines) — Login / register
+│   ├── settings.html     (~210 lines) — User settings (mobile-responsive)
+│   ├── solver.html       (~205 lines) — Core solver (8 methods, steps)
+│   ├── properties.html   (~139 lines) — Matrix properties (det, rank, eig)
+│   ├── compare.html      (~ 63 lines) — Side-by-side method comparison
+│   ├── share.html        (~ 76 lines) — Generate shareable solver links
+│   ├── presets.html      (~ 55 lines) — Common matrix problem presets
+│   ├── history.html      (~ 50 lines) — Previous solve history
+│   ├── paste.html        (~ 54 lines) — Paste/share matrix data
+│   ├── visualize.html    (~ 48 lines) — Matrix heatmap visualization
+│   └── convergence.html  (~ 49 lines) — Iterative method convergence plot
 ```
+
+---
+
+## Feature Pages
+
+| Page          | Route          | Description                                         |
+|---------------|----------------|-----------------------------------------------------|
+| Landing/Dash  | `/`            | Non-auth: hero + features. Auth: tool dashboard     |
+| Auth          | `/auth`        | Login / register with validation                    |
+| Solver        | `/solver`      | 8 methods, step-by-step display, export TXT/DOCX/PDF|
+| Properties    | `/properties`  | Determinant, rank, eigenvalues                      |
+| Compare       | `/compare`     | Run all 8 methods side-by-side on same matrix       |
+| Share         | `/share`       | Generate base64-encoded shareable URL               |
+| Presets       | `/presets`     | Pre-built matrix problems (Vandermonde, Hilbert…)   |
+| History       | `/history`     | Persisted solve history per user                    |
+| Paste         | `/paste`       | Quick matrix paste from text                        |
+| Visualize     | `/visualize`   | Color-coded heatmap of matrix values                |
+| Convergence   | `/convergence` | Residual drop plot for Jacobi & Gauss-Seidel        |
+| Settings      | `/settings`    | Account settings (protected route)                  |
 
 ---
 
@@ -63,17 +98,13 @@ def solve_<method>(A: np.ndarray, b: np.ndarray or None) -> dict:
         "solution": list,       # solution vector or inverse matrix
         "steps": [              # ordered list of steps
             {
-                "label": str,   # e.g. "After Elimination Step 1"
-                "matrix": list, # 2D array (augmented matrix, L, U, etc.)
-                "vector": list, # optional — current solution estimate
-                "extra": dict,  # optional — method-specific (colOrder, etc.)
+                "label": str,
+                "matrix": list,
+                "vector": list,
+                "extra": dict,
             }
         ],
-        "verification": {       # always computed for validation
-            "expected": list,   # b or I
-            "actual": list,     # A@x or A@A⁻¹
-            "match": bool,
-        }
+        "verification": { "expected": list, "actual": list, "match": bool }
     }
 ```
 
@@ -82,33 +113,20 @@ def solve_<method>(A: np.ndarray, b: np.ndarray or None) -> dict:
 def solve_<method>(A: np.ndarray, b: np.ndarray, x0=None, tol=1e-6, max_iter=100) -> dict:
     return {
         "solution": list,
-        "iterations": int,      # number of iterations taken
+        "iterations": int,
         "converged": bool,
         "steps": [
             {
-                "label": str,   # e.g. "Iteration 1"
-                "x": list,      # current solution vector
-                "residual": float,  # ||Ax - b||
-                "delta": float,     # ||x_new - x_old||
-                "extra": dict,  # per-component details
+                "label": str,
+                "x": list,
+                "residual": float,
+                "delta": float,
+                "extra": dict,
             }
         ],
         "verification": { ... }
     }
 ```
-
-### Step Display per Method
-
-| Method              | Steps shown                                                                 |
-|---------------------|-----------------------------------------------------------------------------|
-| Gaussian Partial    | Initial augmented, row swaps, elimination steps, upper triangular, solution |
-| Gaussian Complete   | Initial augmented, row/col swaps + colOrder, elimination, reordered solution|
-| Gauss-Jordan        | Initial augmented, pivot→1, column elimination, RREF, solution              |
-| Matrix Inverse      | [A\|I], pivot swaps, steps to identity, A⁻¹, A·A⁻¹ check                    |
-| Jacobi              | Per-iteration: x vector, component deltas, residual norm                    |
-| Gauss-Seidel        | Per-iteration + per-row: x updates, lower/upper sums, residual              |
-| Doolittle           | Progressive L/U fill, Ly=b forward sub, Ux=y back sub                       |
-| Crout               | Progressive L/U fill (L column first), Ly=b with division, Ux=y no division |
 
 ---
 
@@ -116,13 +134,39 @@ def solve_<method>(A: np.ndarray, b: np.ndarray, x0=None, tol=1e-6, max_iter=100
 
 ### Routes
 
-| Route    | Method | Purpose                         |
-|----------|--------|---------------------------------|
-| `/`      | GET    | Serve index.html                |
-| `/solve` | POST   | Accept JSON, run solver, return result JSON |
+| Route          | Method | Purpose                                          |
+|----------------|--------|--------------------------------------------------|
+| `/`            | GET    | Serve index.html (landing / dashboard)           |
+| `/auth`        | GET    | Serve auth.html                                  |
+| `/auth`        | POST   | Login or register                                |
+| `/logout`      | GET    | Logout + redirect to `/`                         |
+| `/solver`      | GET    | Serve solver.html                                |
+| `/properties`  | GET    | Serve properties.html                            |
+| `/compare`     | GET    | Serve compare.html                               |
+| `/share`       | GET    | Serve share.html                                 |
+| `/presets`     | GET    | Serve presets.html                               |
+| `/history`     | GET    | Serve history.html                               |
+| `/paste`       | GET    | Serve paste.html                                 |
+| `/visualize`   | GET    | Serve visualize.html                             |
+| `/convergence` | GET    | Serve convergence.html                           |
+| `/settings`    | GET    | Serve settings.html (protected)                  |
+| `/solve`       | POST   | Accept JSON, run solver, return result JSON      |
+| `/api/auth/me` | GET    | Return current user JSON (for dashboard toggle)  |
+| `/api/history` | GET    | Return saved solve history for current user      |
+| `/api/history` | POST   | Save a solve result to history                   |
+| `/api/history` | DELETE | Clear all history for current user               |
+| `/api/settings`| POST   | Update user settings                             |
 
-### Request (POST /solve)
+### Auth System
 
+- **SQLite** database (`linsolve.db`) with `users` and `user_data` tables
+- **Session-based** auth via `flask_login`
+- Passwords hashed with `werkzeug.security.generate_password_hash`
+- Dashboard toggle in `index.html` uses `/api/auth/me` endpoint (no redirect)
+
+### API: POST /solve
+
+**Request:**
 ```json
 {
   "method": "gaussian_partial",
@@ -134,56 +178,30 @@ def solve_<method>(A: np.ndarray, b: np.ndarray, x0=None, tol=1e-6, max_iter=100
 }
 ```
 
-- `b` omitted for Matrix Inverse (method 4)
-- `tol` and `max_iter` only used for Jacobi/Gauss-Seidel (methods 5–6)
-
-### Response
-
-Returns the solver function's output dict as JSON, with all numpy arrays converted to lists.
+**Response:**
+```json
+{
+  "solution": [2.2222, 1.1944, -1.25],
+  "steps": [ { "label": "...", "matrix": [...], "vector": [...] } ],
+  "verification": { "expected": [...], "actual": [...], "match": true }
+}
+```
 
 ---
 
-## `templates/index.html` — Tailwind UI
+## Responsive Design
 
-### Layout
+All pages are mobile-responsive with the following patterns:
 
-**Desktop:** Two-column (input left, results right). **Mobile:** Stacked vertically.
-
-### Sections
-
-1. **Header** — "Linear Algebra Solver"
-2. **Method Selector** — Dropdown, 3 optgroups:
-   - Direct Methods (1–4)
-   - Iterative Methods (5–6)
-   - LU Decomposition (7–8)
-3. **Input Panel:**
-   - `n` — number input (triggers grid rebuild on change)
-   - Matrix `A` — `n × n` grid of `<input>` elements, generated by JS
-   - Vector `B` — `n` inputs in a row (hidden when method = Matrix Inverse)
-   - Tolerance + Max Iterations — shown only for Jacobi / Gauss-Seidel
-   - Solve button
-4. **Results Panel** — hidden until solve:
-   - Step navigation (prev/next buttons, step counter)
-   - Active step display: label, matrices as HTML tables, vectors
-   - Final solution highlighted
-   - Verification row (Ax ≈ b, or A·A⁻¹ ≈ I)
-
-### Dynamic JavaScript
-
-| Function             | Trigger         | Action                                         |
-|----------------------|-----------------|------------------------------------------------|
-| `buildGrids()`       | `n` change       | Regenerate A grid and B row inputs              |
-| `updateForm()`       | method change    | Show/hide B, tolerance, max_iter fields         |
-| `submitSolve()`      | Solve button     | POST fetch to `/solve`, render response          |
-| `renderSteps()`      | response received| Build step display with navigation              |
-| `navigateStep(dir)`  | prev/next click  | Show previous/next step                         |
-
-### Tailwind Integration
-
-- CDN script: `<script src="https://cdn.tailwindcss.com"></script>`
-- All styling via utility classes — no custom CSS file
-- Matrix inputs styled as a grid matching mathematical notation
-- Steps displayed in monospace cards with clear labeling
+| Pattern | Implementation |
+|---------|---------------|
+| Body scroll | `overflow: clip; min-height: 100vh` (not `overflow: hidden`) |
+| Back button | Arrow + "Back" in header on every sub-page |
+| Sidebar layout | `flex-col lg:flex-row` — sidebar stacks vertically on mobile with `max-lg:max-h-[50vh]` |
+| Matrix inputs | Responsive cell sizing: `w-12 sm:w-14` |
+| Canvases | `max-width: 100%` with `aspect-ratio` preservation |
+| Touch targets | `py-2`+ for buttons, `py-2.5` for header auth buttons |
+| Settings tabs | Horizontal tab bar on mobile, sidebar on `md+` |
 
 ---
 
@@ -192,13 +210,22 @@ Returns the solver function's output dict as JSON, with all numpy arrays convert
 | Decision                      | Rationale                                              |
 |-------------------------------|--------------------------------------------------------|
 | Tailwind via CDN              | Zero build step, fast prototyping                      |
-| No custom CSS file            | All styling inline via Tailwind utilities              |
 | Dynamic input grids via JS    | Adapts to any n, no server round-trips for UI changes  |
 | Unified step dict format      | Consistent rendering regardless of method              |
-| Matrix Inverse hides B        | A⁻¹ computation doesn't need RHS vector                |
-| x0 defaults to zeros          | No input field needed; reasonable default              |
-| LU methods include solve      | Decompose + forward/back sub = full Ax=b solution      |
-| Verification always computed  | Users can confirm correctness regardless of method     |
+| Landing + dashboard same page | JS auth check toggles visibility, avoids redirect      |
+| SQLite for auth               | Zero-config, portable, no external DB server           |
+| `overflow: clip`              | Allows inner scroll panels on mobile vs `overflow: hidden` |
+
+---
+
+## Dependencies
+
+- Python 3.x
+- Flask ≥ 3.0
+- Flask-Login ≥ 0.6
+- NumPy ≥ 2.0
+- Werkzeug ≥ 3.0
+- Tailwind CSS (CDN, no install)
 
 ---
 
@@ -206,14 +233,10 @@ Returns the solver function's output dict as JSON, with all numpy arrays convert
 
 1. `solver.py` — All 8 solver functions
 2. `app.py` — Flask server with `/` and `/solve` routes
-3. `templates/index.html` — Full UI with Tailwind
-4. Integration test — Run Flask, test each method via browser
-
----
-
-## Dependencies
-
-- Python 3.x
-- Flask (`pip install flask`)
-- NumPy (`pip install numpy`)
-- Tailwind CSS (CDN, no install)
+3. `templates/solver.html` — First UI (full solver with steps)
+4. `models.py` + auth routes — User system
+5. `templates/index.html` — Landing page + auth dashboard
+6. Remaining feature pages — properties, compare, share, presets, history, paste, visualize, convergence
+7. `templates/settings.html` — Account settings
+8. Mobile responsive pass — Back buttons, overflow fix, sidebar collapse, responsive inputs/canvases
+9. `README.md` + `plan.md` — Documentation

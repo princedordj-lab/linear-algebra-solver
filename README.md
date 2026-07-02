@@ -1,24 +1,46 @@
-# Linear Algebra Solver
+# LinSolve — Linear Algebra Solver
 
-A web application for solving linear systems **Ax = b** using eight numerical methods, with step-by-step solution display. Built with **Flask**, **NumPy**, and **Tailwind CSS**.
+A full-featured web application for solving linear systems **Ax = b** using eight numerical methods, with step-by-step solution display, matrix analysis tools, and user authentication. Built with **Flask**, **NumPy**, and **Tailwind CSS**.
 
-![dark theme](https://img.shields.io/badge/theme-dark-blue)
-![light theme](https://img.shields.io/badge/theme-light-gray)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![Flask](https://img.shields.io/badge/flask-3.0+-green)
+![Tailwind](https://img.shields.io/badge/tailwind-css-38bdf8)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 ---
 
 ## Features
 
-- **8 numerical methods** — Direct, iterative, and LU decomposition methods
-- **Step-by-step display** — navigate through each computational step
-- **Dark / light theme** — toggle with one click, persisted in browser storage
-- **Responsive layout** — two-column on desktop, stacked on mobile
-- **Verification** — every solution is checked against Ax ≈ b
-- **Matrix input** — dynamic n×n grid that resizes automatically
-- **Vercel-ready** — deploy in one click
+- **8 numerical methods** — Direct, iterative, and LU decomposition
+- **Step-by-step display** — Navigate through each computation step, export as TXT / DOCX / PDF
+- **Matrix properties** — Determinant, rank, eigenvalues
+- **Side-by-side comparison** — Run all 8 methods on the same matrix
+- **Shareable solver links** — Base64-encoded matrix data in the URL
+- **Problem presets** — Vandermonde, Hilbert, diagonal-dominant, and more
+- **Solve history** — Persisted per user (saved to SQLite)
+- **Matrix visualization** — Color-coded heatmap + convergence plots
+- **User authentication** — Register / login with session-based auth
+- **Dark / light theme** — Toggle persisted in browser storage
+- **Fully responsive** — Mobile-first layouts throughout (back buttons, collapsible sidebars, responsive canvases)
+
+---
+
+## Pages
+
+| Page | Route | Description |
+|------|-------|-------------|
+| Landing / Dashboard | `/` | Landing hero for guests, tool grid for authenticated users |
+| Solver | `/solver` | 8 methods with step-by-step display and export |
+| Properties | `/properties` | Determinant, rank, eigenvalue computation |
+| Compare | `/compare` | All 8 methods side-by-side on the same matrix |
+| Share | `/share` | Generate base64-encoded shareable solver links |
+| Presets | `/presets` | Built-in matrix problem presets |
+| History | `/history` | Saved solve history (per user) |
+| Paste | `/paste` | Quick matrix paste from text input |
+| Visualize | `/visualize` | Color-coded heatmap of matrix values |
+| Convergence | `/convergence` | Residual drop plot for Jacobi / Gauss-Seidel |
+| Settings | `/settings` | Account settings (requires login) |
+| Auth | `/auth` | Login / registration |
 
 ---
 
@@ -42,11 +64,25 @@ A web application for solving linear systems **Ax = b** using eight numerical me
 ```
 py/
 ├── api/
-│   └── index.py          # Vercel serverless entry point
+│   └── index.py           # Vercel serverless entry point
+├── public/
+│   └── logo.svg           # Favicon / brand logo
 ├── templates/
-│   └── index.html         # Tailwind-styled UI (dark/light theme)
-├── app.py                 # Flask server — GET / and POST /solve
-├── solver.py              # 8 solver functions with step-by-step output
+│   ├── index.html         # Landing page + auth dashboard
+│   ├── auth.html          # Login / registration
+│   ├── settings.html      # Account settings
+│   ├── solver.html        # Core solver UI
+│   ├── properties.html    # Matrix properties
+│   ├── compare.html       # Method comparison
+│   ├── share.html         # Shareable link generator
+│   ├── presets.html       # Problem presets
+│   ├── history.html       # Solve history
+│   ├── paste.html         # Quick paste
+│   ├── visualize.html     # Heatmap visualization
+│   └── convergence.html   # Convergence plot
+├── app.py                 # Flask server — all routes
+├── solver.py              # 8 solver functions
+├── models.py              # SQLite auth models & helpers
 ├── requirements.txt       # Python dependencies
 ├── vercel.json            # Vercel deployment configuration
 └── README.md              # This file
@@ -64,10 +100,7 @@ py/
 ### Install
 
 ```bash
-# Clone or navigate to the project directory
 cd py
-
-# Install dependencies
 pip install -r requirements.txt
 ```
 
@@ -77,24 +110,26 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Then open **http://127.0.0.1:5000** in your browser.
-
-The server runs in debug mode by default, so changes to the code trigger an automatic reload.
+Then open **http://127.0.0.1:5000** in your browser. The server runs in debug mode by default.
 
 ---
 
 ## Usage
 
-1. Select a method from the dropdown
-2. Set the matrix size **n** (1–10)
-3. Enter matrix **A** values in the grid
-4. Enter vector **b** values (hidden for Matrix Inverse)
-5. For Jacobi / Gauss-Seidel, set tolerance and max iterations
-6. Click **Solve**
-7. Use **Prev / Next** to step through the computation
-8. Check the **Solution** and **Verification** sections at the bottom
-9. Click **↻** to reset all inputs and results
-10. Toggle **☽ / ☀** in the header for dark / light mode
+### Guest flow
+- Visit `/` — see the landing page with feature highlights and "Get Started" / "Sign In" buttons
+- Click **Start Solving** — redirected to `/auth` for registration or login
+
+### Authenticated flow
+- Access all 11 tools from the dashboard grid on `/`
+- **Solver** — Select a method, enter matrix A and vector b, step through the solution
+- **Compare** — Run all 8 methods on the same matrix in one click
+- **Properties** — Compute determinant, rank, and eigenvalues
+- **Share** — Generate a link with your matrix data encoded in the URL
+- **Presets** — Load common matrices (Hilbert, Vandermonde, etc.)
+- **History** — Browse and reopen past solves
+- **Visualize** — Generate a color-coded heatmap
+- **Convergence** — Plot residual drop for iterative methods
 
 ---
 
@@ -117,15 +152,6 @@ Accepts JSON and returns the solver result with step-by-step data.
 }
 ```
 
-| Field | Type | Required | Notes |
-|-------|------|----------|-------|
-| `method` | string | yes | One of the 8 method keys (see below) |
-| `n` | int | yes | Matrix size |
-| `A` | 2D array | yes | n×n coefficient matrix |
-| `b` | array | no | Omitted for `matrix_inverse` |
-| `tol` | float | no | Used by Jacobi / Gauss-Seidel (default 1e-6) |
-| `max_iter` | int | no | Used by Jacobi / Gauss-Seidel (default 100) |
-
 **Method keys:** `gaussian_partial`, `gaussian_complete`, `gauss_jordan`, `matrix_inverse`, `jacobi`, `gauss_seidel`, `lu_doolittle`, `lu_crout`
 
 **Response:**
@@ -133,34 +159,44 @@ Accepts JSON and returns the solver result with step-by-step data.
 ```json
 {
   "solution": [2.2222, 1.1944, -1.25],
-  "steps": [
-    {
-      "label": "Initial Augmented Matrix",
-      "matrix": [[...], ...],
-      "vector": [...],
-      "extra": {...}
-    }
-  ],
-  "verification": {
-    "expected": [2, -1, 4],
-    "actual": [2.0, -1.0, 4.0],
-    "match": true
-  }
+  "steps": [ { "label": "...", "matrix": [...], "vector": [...] } ],
+  "verification": { "expected": [...], "actual": [...], "match": true }
 }
 ```
+
+### `GET /api/auth/me`
+
+Returns current user info for the dashboard auth state toggle.
+
+### `GET /api/history`, `POST /api/history`, `DELETE /api/history`
+
+CRUD for saved solve history (authenticated users only).
+
+---
+
+## Responsive Design
+
+All pages are built mobile-first:
+
+- **Body** uses `overflow: clip; min-height: 100vh` to enable inner scrolling on mobile
+- **Back button** on every sub-page header
+- **Sidebars** (solver, properties) collapse vertically on small screens (`max-lg:max-h-[50vh]`)
+- **Matrix input cells** use responsive widths (`w-12 sm:w-14`)
+- **Canvases** constrained by `max-width: 100%` with `aspect-ratio`
+- **Settings** uses horizontal tab bar on mobile, sidebar on desktop
 
 ---
 
 ## Deploy on Vercel
 
-### Option 1 — Vercel Dashboard (recommended)
+### Vercel Dashboard (recommended)
 
-1. Push the project to a **GitHub**, **GitLab**, or **Bitbucket** repository
-2. Go to [vercel.com](https://vercel.com) and click **Add New > Project**
-3. Import your repository
-4. Vercel auto-detects the settings. Click **Deploy**
+1. Push to a GitHub / GitLab / Bitbucket repository
+2. Go to [vercel.com](https://vercel.com) → **Add New > Project**
+3. Import your repo — Vercel auto-detects settings
+4. Click **Deploy**
 
-### Option 2 — Vercel CLI
+### Vercel CLI
 
 ```bash
 npm install -g vercel
@@ -176,6 +212,7 @@ vercel --prod
 | Component | Technology |
 |-----------|-----------|
 | Backend | Python, Flask 3.x |
+| Auth | Flask-Login, Werkzeug, SQLite |
 | Numerical | NumPy 2.x |
 | Frontend | Tailwind CSS (CDN) |
 | Typography | Inter, JetBrains Mono (Google Fonts) |

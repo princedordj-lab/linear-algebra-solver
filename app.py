@@ -2,7 +2,7 @@
 app.py — Flask server for the Linear Algebra Solver web app.
 """
 
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, redirect
 from datetime import datetime, timedelta
 import secrets
 
@@ -180,6 +180,9 @@ def auth_page():
 
 @app.route("/settings")
 def settings_page():
+    user = current_user()
+    if not user:
+        return redirect("/auth")
     return render_template("settings.html")
 
 
