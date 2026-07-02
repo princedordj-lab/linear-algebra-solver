@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinSolve — Settings</title>
+  <link rel="shortcut icon" href="/public/logo.svg" type="image/x-icon">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'], mono: ['JetBrains Mono', 'Fira Code', 'monospace'] },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-feature-settings: 'tnum'; overflow: hidden; height: 100vh; background: #f8fafc; }
+    .dark body, .dark { background: #0c0a1d; }
+    .bg-glow { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+    .bg-glow::before { content: ''; position: absolute; top: -50%; left: -25%; width: 80%; height: 80%; background: radial-gradient(ellipse at center, rgba(99,102,241,0.08) 0%, transparent 70%); animation: drift 20s ease-in-out infinite alternate; }
+    .bg-glow::after { content: ''; position: absolute; bottom: -30%; right: -10%; width: 60%; height: 60%; background: radial-gradient(ellipse at center, rgba(245,158,11,0.05) 0%, transparent 70%); animation: drift 25s ease-in-out infinite alternate-reverse; }
+    .dark .bg-glow::before { background: radial-gradient(ellipse at center, rgba(99,102,241,0.12) 0%, transparent 70%); }
+    .dark .bg-glow::after { background: radial-gradient(ellipse at center, rgba(245,158,11,0.07) 0%, transparent 70%); }
+    @keyframes drift { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(8%, 6%) scale(1.1); } }
+    .logo-pulse { animation: pulseGlow 3s ease-in-out infinite; }
+    @keyframes pulseGlow { 0%, 100% { filter: drop-shadow(0 0 4px rgba(99,102,241,0.3)); } 50% { filter: drop-shadow(0 0 12px rgba(99,102,241,0.6)); } }
+    .btn-primary { background: linear-gradient(135deg, #4f46e5, #7c3aed); transition: all 0.2s ease; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(79,70,229,0.4); }
+    .dark .btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+    .fade-in { animation: fadeIn 0.25s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .section-card { background: white; border: 1px solid rgba(99,102,241,0.15); border-radius: 1rem; padding: 1.25rem; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .dark .section-card { background: #0c0a1d; border-color: rgba(99,102,241,0.25); }
+  </style>
+</head>
+<body class="antialiased font-sans">
+  <div class="bg-glow"></div>
+  <header class="relative z-40 h-14 flex items-center justify-between px-5 border-b border-indigo-200/40 dark:border-indigo-900/40 bg-white/70 dark:bg-[#0c0a1d]/80 backdrop-blur-xl">
+    <div class="flex items-center gap-3">
+      <a href="/" class="flex items-center gap-2.5 logo-pulse">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="6" width="24" height="16" rx="3" stroke="url(#logoGrad)" stroke-width="2" fill="none"/><text x="14" y="19" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11" font-weight="600" fill="url(#logoGrad)">Ax</text><defs><linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#a78bfa"/></linearGradient></defs></svg>
+        <span class="text-base font-semibold tracking-tight bg-gradient-to-r from-indigo-600 to-violet-500 dark:from-indigo-400 dark:to-violet-300 text-transparent bg-clip-text">LinSolve</span>
+      </a>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="themeToggle" onclick="toggleTheme()" class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors text-indigo-400 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60"><span id="themeIcon" class="text-lg leading-none">&#x263D;</span></button>
+      <button onclick="logout()" class="text-xs text-indigo-500 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 px-3 py-1.5 rounded-lg border border-indigo-200/60 dark:border-indigo-900/40 transition-colors">Sign out</button>
+    </div>
+  </header>
+  <main class="relative z-10 flex h-[calc(100vh-3.5rem)]">
+    <aside class="w-[320px] min-w-[280px] flex-shrink-0 border-r border-indigo-200/30 dark:border-indigo-900/30 bg-white/40 dark:bg-[#0c0a1d]/40 backdrop-blur-sm scroll-panel overflow-y-auto p-5 space-y-4">
+      <div class="text-center">
+        <div class="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center mx-auto mb-3 text-indigo-600 dark:text-indigo-300 font-semibold text-lg" id="avatar">U</div>
+        <div class="text-sm font-semibold text-gray-800 dark:text-gray-200" id="profile-username">User</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500" id="profile-email">user@example.com</div>
+      </div>
+      <div class="space-y-2">
+        <button onclick="showSection('profile')" class="w-full text-left px-3 py-2 rounded-xl text-sm font-medium text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40">Profile</button>
+        <button onclick="showSection('security')" class="w-full text-left px-3 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-indigo-50/60 dark:hover:bg-indigo-950/30">Security</button>
+        <button onclick="showSection('data')" class="w-full text-left px-3 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-indigo-50/60 dark:hover:bg-indigo-950/30">Data</button>
+      </div>
+    </aside>
+    <main class="flex-1 scroll-panel overflow-y-auto p-8">
+      <div id="section-profile" class="max-w-2xl space-y-4 fade-in">
+        <div class="section-card"><h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Profile Info</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div><label class="block text-[11px] font-semibold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-1">Username</label><input id="set-username" type="text" class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900/80 text-gray-800 dark:text-gray-200"></div><div><label class="block text-[11px] font-semibold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-1">Email</label><input id="set-email" type="email" class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900/80 text-gray-800 dark:text-gray-200"></div></div><button onclick="saveProfile()" class="btn-primary mt-4 text-white text-sm font-semibold py-2 px-5 rounded-xl shadow-lg shadow-indigo-500/20">Save changes</button></div>
+      </div>
+      <div id="section-security" class="hidden max-w-2xl space-y-4 fade-in">
+        <div class="section-card"><h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Change Password</h3><div class="space-y-3"><div><label class="block text-[11px] font-semibold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-1">Current password</label><input id="current-password" type="password" class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900/80 text-gray-800 dark:text-gray-200"></div><div><label class="block text-[11px] font-semibold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-1">New password</label><input id="new-password" type="password" class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900/80 text-gray-800 dark:text-gray-200"></div></div><button onclick="changePassword()" class="btn-primary mt-4 text-white text-sm font-semibold py-2 px-5 rounded-xl shadow-lg shadow-indigo-500/20">Update password</button></div>
+      </div>
+      <div id="section-data" class="hidden max-w-2xl space-y-4 fade-in">
+        <div class="section-card"><h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Your Data</h3><p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Solve history and presets are synced to your account.</p><div class="flex gap-2"><button onclick="exportData()" class="px-4 py-2 border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors">Export JSON</button><label class="px-4 py-2 border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors cursor-pointer"><input id="import-file" type="file" class="hidden" accept="application/json" onchange="importData(event)">Import JSON</label></div></div>
+      </div>
+      <div id="settings-error" class="mt-4 text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl px-4 py-3 hidden"></div>
+      <div id="settings-success" class="mt-4 text-sm text-emerald-600 dark:text-emerald-400 hidden">Saved</div>
+    </main>
+  </main>
+  <script>
+    let profileUser = null;
+    function toggleTheme(){const h=document.documentElement,i=document.getElementById('themeIcon'),d=h.classList.toggle('dark');localStorage.setItem('theme',d?'dark':'light');i.textContent=d?'\u263E':'\u263D';}
+    (function(){const s=localStorage.getItem('theme'),p=window.matchMedia('(prefers-color-scheme: dark)').matches,u=s==='dark'||(!s&&p);if(u){document.documentElement.classList.add('dark');document.getElementById('themeIcon').textContent='\u263E';}})();
+    function showSection(name){['profile','security','data'].forEach(s=>{document.getElementById('section-'+s).classList.toggle('hidden',s!==name);});}
+    async function loadProfile(){const r=await fetch('/api/auth/me');const d=await r.json();if(!d.user){window.location.href='/auth';return;}profileUser=d.user;document.getElementById('profile-username').textContent=d.user.username;document.getElementById('profile-email').textContent=d.user.email;document.getElementById('set-username').value=d.user.username;document.getElementById('set-email').value=d.user.email;document.getElementById('avatar').textContent=d.user.username.slice(0,1).toUpperCase();}
+    async function saveProfile(){const username=document.getElementById('set-username').value.trim(),email=document.getElementById('set-email').value.trim();const r=await fetch('/api/auth/profile',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,email})});const d=await r.json();if(!r.ok){showSettingsError(d.error||'Save failed');return;}localStorage.setItem('linsolve_user',JSON.stringify(d.user));loadProfile();showSettingsSuccess();}
+    async function changePassword(){const current=document.getElementById('current-password').value,newPass=document.getElementById('new-password').value;const r=await fetch('/api/auth/password',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({current_password:current,password:newPass})});const d=await r.json();if(!r.ok){showSettingsError(d.error||'Update failed');return;}document.getElementById('current-password').value='';document.getElementById('new-password').value='';showSettingsSuccess();}
+    async function logout(){await fetch('/api/auth/logout',{method:'POST'});localStorage.removeItem('linsolve_user');window.location.href='/';}
+    function showSettingsError(msg){const e=document.getElementById('settings-error');e.textContent=msg;e.classList.remove('hidden');document.getElementById('settings-success').classList.add('hidden');}
+    function showSettingsSuccess(){document.getElementById('settings-success').classList.remove('hidden');document.getElementById('settings-error').classList.add('hidden');setTimeout(()=>document.getElementById('settings-success').classList.add('hidden'),2000);}
+    function exportData(){const data={history:JSON.parse(localStorage.getItem('linsolve_history')||'[]'),presets:JSON.parse(localStorage.getItem('linsolve_presets')||'[]')};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='linsolve-data.json';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);}
+    function importData(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){try{const data=JSON.parse(e.target.result);localStorage.setItem('linsolve_history',JSON.stringify(data.history||[]));localStorage.setItem('linsolve_presets',JSON.stringify(data.presets||[]));showSettingsSuccess();}catch(err){showSettingsError('Invalid file');}};reader.readAsText(file);}
+    loadProfile();
+  </script>
+</body>
+</html>

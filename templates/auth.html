@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinSolve — Account</title>
+  <link rel="shortcut icon" href="/public/logo.svg" type="image/x-icon">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'], mono: ['JetBrains Mono', 'Fira Code', 'monospace'] },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-feature-settings: 'tnum'; overflow: hidden; height: 100vh; background: #f8fafc; }
+    .dark body, .dark { background: #0c0a1d; }
+    .bg-glow { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+    .bg-glow::before { content: ''; position: absolute; top: -50%; left: -25%; width: 80%; height: 80%; background: radial-gradient(ellipse at center, rgba(99,102,241,0.08) 0%, transparent 70%); animation: drift 20s ease-in-out infinite alternate; }
+    .bg-glow::after { content: ''; position: absolute; bottom: -30%; right: -10%; width: 60%; height: 60%; background: radial-gradient(ellipse at center, rgba(245,158,11,0.05) 0%, transparent 70%); animation: drift 25s ease-in-out infinite alternate-reverse; }
+    .dark .bg-glow::before { background: radial-gradient(ellipse at center, rgba(99,102,241,0.12) 0%, transparent 70%); }
+    .dark .bg-glow::after { background: radial-gradient(ellipse at center, rgba(245,158,11,0.07) 0%, transparent 70%); }
+    @keyframes drift { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(8%, 6%) scale(1.1); } }
+    .logo-pulse { animation: pulseGlow 3s ease-in-out infinite; }
+    @keyframes pulseGlow { 0%, 100% { filter: drop-shadow(0 0 4px rgba(99,102,241,0.3)); } 50% { filter: drop-shadow(0 0 12px rgba(99,102,241,0.6)); } }
+    .btn-primary { background: linear-gradient(135deg, #4f46e5, #7c3aed); transition: all 0.2s ease; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(79,70,229,0.4); }
+    .dark .btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+    .tab-active { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; box-shadow: 0 2px 8px rgba(99,102,241,0.35); }
+    .fade-in { animation: fadeIn 0.25s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus { -webkit-box-shadow: 0 0 0 1000px white inset; -webkit-text-fill-color: black; }
+    .dark input:-webkit-autofill, .dark input:-webkit-autofill:hover, .dark input:-webkit-autofill:focus { -webkit-box-shadow: 0 0 0 1000px #111827 inset; -webkit-text-fill-color: white; }
+  </style>
+</head>
+<body class="antialiased font-sans">
+  <div class="bg-glow"></div>
+  <header class="relative z-40 h-14 flex items-center justify-between px-5 border-b border-indigo-200/40 dark:border-indigo-900/40 bg-white/70 dark:bg-[#0c0a1d]/80 backdrop-blur-xl">
+    <div class="flex items-center gap-3">
+      <a href="/" class="flex items-center gap-2.5 logo-pulse">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="6" width="24" height="16" rx="3" stroke="url(#logoGrad)" stroke-width="2" fill="none"/><text x="14" y="19" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11" font-weight="600" fill="url(#logoGrad)">Ax</text><defs><linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#a78bfa"/></linearGradient></defs></svg>
+        <span class="text-base font-semibold tracking-tight bg-gradient-to-r from-indigo-600 to-violet-500 dark:from-indigo-400 dark:to-violet-300 text-transparent bg-clip-text">LinSolve</span>
+      </a>
+    </div>
+    <button id="themeToggle" onclick="toggleTheme()" class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors text-indigo-400 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60"><span id="themeIcon" class="text-lg leading-none">&#x263D;</span></button>
+  </header>
+  <main class="relative z-10 flex items-center justify-center h-[calc(100vh-3.5rem)] p-4">
+    <div class="w-full max-w-md">
+      <div class="mb-5 flex rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/40 p-1">
+        <button id="tab-login" onclick="switchTab('login')" class="flex-1 py-2 text-sm font-semibold text-indigo-600 dark:text-indigo-300 rounded-xl transition-all tab-active">Sign in</button>
+        <button id="tab-register" onclick="switchTab('register')" class="flex-1 py-2 text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-300 rounded-xl transition-all">Create account</button>
+      </div>
+      <div class="p-6 rounded-2xl border border-indigo-200/30 dark:border-indigo-900/30 bg-white/70 dark:bg-[#0c0a1d]/60 backdrop-blur-sm shadow-sm">
+        <div id="login-form" class="fade-in space-y-4">
+          <div><label class="block text-[11px] font-semibold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-1">Email</label><input id="login-email" type="email" class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-900/80 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 transition-all" placeholder="you@example.com"></div>
+          <div><label class="block text-[11px] font-semibold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-1">Password</label><input id="login-password" type="password" class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-900/80 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 transition-all" placeholder="••••••••"></div>
+          <button onclick="handleLogin()" class="btn-primary w-full text-white text-sm font-semibold py-2.5 rounded-xl shadow-lg shadow-indigo-500/20">Continue</button>
+          <button onclick="showForgot()" class="w-full text-xs text-indigo-500 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 py-1">Forgot password?</button>
+        </div>
+        <div id="register-form" class="hidden space-y-4">
+          <div><label class="block text-[11px] font-semibold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-1">Username</label><input id="reg-username" type="text" class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-900/80 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 transition-all" placeholder="jane"></div>
+          <div><label class="block text-[11px] font-semibold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-1">Email</label><input id="reg-email" type="email" class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-900/80 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 transition-all" placeholder="you@example.com"></div>
+          <div><label class="block text-[11px] font-semibold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-1">Password</label><input id="reg-password" type="password" class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-900/80 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 transition-all" placeholder="Min 8 characters"></div>
+          <button onclick="handleRegister()" class="btn-primary w-full text-white text-sm font-semibold py-2.5 rounded-xl shadow-lg shadow-indigo-500/20">Create account</button>
+        </div>
+        <div id="forgot-form" class="hidden space-y-4">
+          <p class="text-xs text-gray-500 dark:text-gray-400">Enter your email and we’ll send you a reset link.</p>
+          <div><label class="block text-[11px] font-semibold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-1">Email</label><input id="forgot-email" type="email" class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-900/80 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 transition-all" placeholder="you@example.com"></div>
+          <button onclick="handleForgot()" class="btn-primary w-full text-white text-sm font-semibold py-2.5 rounded-xl shadow-lg shadow-indigo-500/20">Send reset link</button>
+          <button onclick="showAuth()" class="w-full text-xs text-indigo-500 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 py-1">Back to login</button>
+        </div>
+        <div id="reset-form" class="hidden space-y-4">
+          <p class="text-xs text-gray-500 dark:text-gray-400">Choose a new password.</p>
+          <input id="reset-token" type="hidden">
+          <div><label class="block text-[11px] font-semibold text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-1">New password</label><input id="reset-password" type="password" class="w-full border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-900/80 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 transition-all" placeholder="Min 8 characters"></div>
+          <button onclick="handleReset()" class="btn-primary w-full text-white text-sm font-semibold py-2.5 rounded-xl shadow-lg shadow-indigo-500/20">Reset password</button>
+        </div>
+        <div id="auth-error" class="mt-4 text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl px-4 py-3 hidden"></div>
+      </div>
+      <p id="auth-success" class="mt-4 text-center text-sm text-emerald-600 dark:text-emerald-400 hidden">Done. You can sign in now.</p>
+    </div>
+  </main>
+  <script>
+    function toggleTheme(){const h=document.documentElement,i=document.getElementById('themeIcon'),d=h.classList.toggle('dark');localStorage.setItem('theme',d?'dark':'light');i.textContent=d?'\u263E':'\u263D';}
+    (function(){const s=localStorage.getItem('theme'),p=window.matchMedia('(prefers-color-scheme: dark)').matches,u=s==='dark'||(!s&&p);if(u){document.documentElement.classList.add('dark');document.getElementById('themeIcon').textContent='\u263E';}})();
+    function switchTab(tab){document.getElementById('login-form').classList.toggle('hidden',tab!=='login');document.getElementById('register-form').classList.toggle('hidden',tab!=='register');document.getElementById('forgot-form').classList.add('hidden');document.getElementById('reset-form').classList.add('hidden');document.getElementById('tab-login').classList.toggle('tab-active',tab==='login');document.getElementById('tab-register').classList.toggle('tab-active',tab==='register');document.getElementById('tab-login').classList.toggle('text-gray-500',tab!=='login');document.getElementById('tab-register').classList.toggle('text-gray-500',tab!=='register');hideError();}
+    function showForgot(){document.getElementById('login-form').classList.add('hidden');document.getElementById('register-form').classList.add('hidden');document.getElementById('forgot-form').classList.remove('hidden');document.getElementById('reset-form').classList.add('hidden');hideError();}
+    function showReset(){document.getElementById('login-form').classList.add('hidden');document.getElementById('register-form').classList.add('hidden');document.getElementById('forgot-form').classList.add('hidden');document.getElementById('reset-form').classList.remove('hidden');hideError();}
+    function showAuth(){document.getElementById('login-form').classList.remove('hidden');document.getElementById('register-form').classList.add('hidden');document.getElementById('forgot-form').classList.add('hidden');document.getElementById('reset-form').classList.add('hidden');hideError();}
+    function showError(msg){const e=document.getElementById('auth-error');e.textContent=msg;e.classList.remove('hidden');}
+    function hideError(){document.getElementById('auth-error').classList.add('hidden');document.getElementById('auth-success').classList.add('hidden');}
+    async function handleLogin(){const email=document.getElementById('login-email').value.trim(),password=document.getElementById('login-password').value;hideError();try{const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})}),d=await r.json();if(!r.ok){showError(d.error||'Login failed');return;} localStorage.setItem('linsolve_user',JSON.stringify(d.user));window.location.href='/';}catch(err){showError('Network error');}}
+    async function handleRegister(){const username=document.getElementById('reg-username').value.trim(),email=document.getElementById('reg-email').value.trim(),password=document.getElementById('reg-password').value;hideError();if(!username||!email||!password){showError('All fields are required');return;}if(password.length<8){showError('Password must be at least 8 characters');return;}try{const r=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,email,password})}),d=await r.json();if(!r.ok){showError(d.error||'Registration failed');return;} localStorage.setItem('linsolve_user',JSON.stringify(d.user));window.location.href='/';}catch(err){showError('Network error');}}
+    async function handleForgot(){const email=document.getElementById('forgot-email').value.trim();hideError();if(!email){showError('Enter your email');return;}try{const r=await fetch('/api/auth/forgot-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})}),d=await r.json();if(!r.ok){showError(d.error||'Failed');return;} showReset();}catch(err){showError('Network error');}}
+    async function handleReset(){const token=document.getElementById('reset-token').value,password=document.getElementById('reset-password').value;hideError();if(!password||password.length<8){showError('Password must be at least 8 characters');return;}try{const r=await fetch('/api/auth/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,password})}),d=await r.json();if(!r.ok){showError(d.error||'Reset failed');return;} showAuth(); document.getElementById('auth-success').classList.remove('hidden');}catch(err){showError('Network error');}}
+    (function restore(){const q=new URLSearchParams(window.location.search);const token=q.get('token');if(token){document.getElementById('reset-token').value=token;switchTab('login');showForgot();showReset();}const saved=localStorage.getItem('linsolve_user');if(saved){try{const u=JSON.parse(saved);if(u&&u.id){fetch('/api/auth/me').then(r=>r.json()).then(d=>{if(d.user){localStorage.setItem('linsolve_user',JSON.stringify(d.user));}else{localStorage.removeItem('linsolve_user');window.location.href='/auth';}}).catch(()=>{localStorage.removeItem('linsolve_user');});}}catch(e){localStorage.removeItem('linsolve_user');}}})();
+  </script>
+</body>
+</html>
