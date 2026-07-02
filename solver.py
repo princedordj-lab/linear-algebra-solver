@@ -609,6 +609,41 @@ def solve_lu_crout(A, b):
 
 
 # ---------------------------------------------------------------------------
+# Matrix Properties: Determinant, Eigenvalues, Rank
+# ---------------------------------------------------------------------------
+
+def compute_properties(A):
+    """Compute determinant, eigenvalues, and rank of a square matrix."""
+    A = np.array(A, dtype=float)
+    n = A.shape[0]
+
+    if A.shape[0] != A.shape[1]:
+        raise ValueError("Properties require a square matrix")
+
+    det = float(np.linalg.det(A))
+    eigvals_complex = np.linalg.eigvals(A)
+    eigvals = eigvals_complex.real.tolist()
+    rank = int(np.linalg.matrix_rank(A, tol=1e-9))
+
+    steps = [
+        {"label": "Matrix Input", "matrix": _mat_list(A)},
+        {"label": f"Determinant: det(A) = {det:.6g}", "extra": {"determinant": det}},
+        {"label": f"Rank: rank(A) = {rank} (of {n})", "extra": {"rank": rank, "size": n}},
+        {"label": f"Eigenvalues: λ = [{', '.join(f'{v:.6g}' for v in eigvals)}]", "extra": {"eigenvalues": eigvals}},
+    ]
+
+    return {
+        "solution": {
+            "determinant": det,
+            "rank": rank,
+            "size": n,
+            "eigenvalues": eigvals,
+        },
+        "steps": steps,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Method Registry
 # ---------------------------------------------------------------------------
 
@@ -621,6 +656,7 @@ MATRIX_METHODS = {
     "gauss_seidel":      solve_gauss_seidel,
     "lu_doolittle":      solve_lu_doolittle,
     "lu_crout":          solve_lu_crout,
+    "matrix_properties": compute_properties,
 }
 
 ITERATIVE_METHODS = {"jacobi", "gauss_seidel"}

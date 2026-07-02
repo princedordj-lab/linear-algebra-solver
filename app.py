@@ -6,6 +6,8 @@ from flask import Flask, render_template, request, jsonify
 
 from solver import MATRIX_METHODS, ITERATIVE_METHODS, NO_B_METHODS
 
+NO_B_METHODS = NO_B_METHODS | {"matrix_properties"}
+
 app = Flask(__name__)
 
 
@@ -57,6 +59,51 @@ def solve():
         return jsonify({"error": str(exc)}), 400
 
     return jsonify(result)
+
+
+@app.route("/solver")
+def solver_page():
+    return render_template("solver.html")
+
+
+@app.route("/presets")
+def presets_page():
+    return render_template("presets.html")
+
+
+@app.route("/compare")
+def compare_page():
+    return render_template("compare.html")
+
+
+@app.route("/visualize")
+def visualize_page():
+    return render_template("visualize.html")
+
+
+@app.route("/history")
+def history_page():
+    return render_template("history.html")
+
+
+@app.route("/convergence")
+def convergence_page():
+    return render_template("convergence.html")
+
+
+@app.route("/paste")
+def paste_page():
+    return render_template("paste.html")
+
+
+@app.route("/share")
+def share_page():
+    return render_template("share.html")
+
+
+@app.route("/properties")
+def properties_page():
+    return render_template("properties.html")
 
 
 if __name__ == "__main__":
